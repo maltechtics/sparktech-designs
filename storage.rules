@@ -1,0 +1,177 @@
+rules_version = '2';
+
+// ============================================================
+// SPARKTECH DESIGNS - FIREBASE STORAGE SECURITY RULES
+// Building & Construction Company Website
+// ============================================================
+//
+// Storage Structure:
+// /projects/{projectId}/...
+// /properties/{propertyId}/...
+// /services/{serviceId}/...
+// /blog/{postId}/...
+// /team/{memberId}.jpg
+// /users/{userId}/avatar.jpg
+// /applications/{appId}/resume.pdf
+// /general/...
+// ============================================================
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // ========================================
+    // HELPER FUNCTIONS
+    // ========================================
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if user is admin (requires Firestore lookup)
+    function isAdmin() {
+      return isAuthenticated() &&
+        firestore.exists(/databases/(default)/documents/user_roles/$(request.auth.uid)) &&
+        firestore.get(/databases/(default)/documents/user_roles/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Check file size (max 10MB for images, 20MB for documents)
+    function isValidImageSize() {
+      return request.resource.size < 10 * 1024 * 1024;
+    }
+    
+    function isValidDocumentSize() {
+      return request.resource.size < 20 * 1024 * 1024;
+    }
+    
+    // Check file type
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    function isPDF() {
+      return request.resource.contentType == 'application/pdf';
+    }
+    
+    // ========================================
+    // PROJECT IMAGES (Public Read, Admin Write)
+    // ========================================
+    match /projects/{projectId}/{allPaths=**} {
+      // Anyone can view project images
+      allow read: if true;
+      
+      // Only admins can upload/modify project images
+      allow write: if isAdmin() && isImage() && isValidImageSize();
+    }
+    
+    // ========================================
+    // PROPERTY IMAGES (Public Read, Admin Write)
+    // ========================================
+    match /properties/{propertyId}/{allPaths=**} {
+      // Anyone can view property images
+      allow read: if true;
+      
+      // Only admins can upload/modify property images
+      allow write: if isAdmin() && (isImage() || isPDF()) && isValidImageSize();
+    }
+    
+    // ========================================
+    // SERVICE IMAGES (Public Read, Admin Write)
+    // ========================================
+    match /services/{serviceId}/{allPaths=**} {
+      // Anyone can view service images
+      allow read: if true;
+      
+      // Only admins can upload/modify service images
+      allow write: if isAdmin() && isImage() && isValidImageSize();
+    }
+    
+    // ========================================
+    // BLOG IMAGES (Public Read, Admin Write)
+    // ========================================
+    match /blog/{postId}/{allPaths=**} {
+      // Anyone can view blog images
+      allow read: if true;
+      
+      // Only admins can upload/modify blog images
+      allow write: if isAdmin() && isImage() && isValidImageSize();
+    }
+    
+    // ========================================
+    // TEAM PHOTOS (Public Read, Admin Write)
+    // ========================================
+    match /team/{fileName} {
+      // Anyone can view team photos
+      allow read: if true;
+      
+      // Only admins can upload/modify team photos
+      allow write: if isAdmin() && isImage() && isValidImageSize();
+    }
+    
+    // ========================================
+    // USER AVATARS (Public Read, Owner Write)
+    // ========================================
+    match /users/{userId}/avatar.jpg {
+      // Anyone can view avatars (for display in comments, etc.)
+      allow read: if true;
+      
+      // Users can only upload their own avatar
+      allow write: if isAuthenticated() && 
+        request.auth.uid == userId && 
+        isImage() && 
+        request.resource.size < 5 * 1024 * 1024; // 5MB max for avatars
+    }
+    
+    // User folder - additional files
+    match /users/{userId}/{fileName} {
+      // Only owner can access their files
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAuthenticated() && 
+        request.auth.uid == userId && 
+        isValidImageSize();
+    }
+    
+    // ========================================
+    // JOB APPLICATION RESUMES (Private)
+    // ========================================
+    match /applications/{appId}/{fileName} {
+      // Only admins can read application files
+      allow read: if isAdmin();
+      
+      // Anyone can upload (during application submission)
+      // Limited to PDFs and reasonable size
+      allow create: if isPDF() && isValidDocumentSize();
+      
+      // No updates or deletes from users
+      allow update, delete: if isAdmin();
+    }
+    
+    // ========================================
+    // GENERAL ASSETS (Public Read, Admin Write)
+    // ========================================
+    match /general/{fileName} {
+      // Anyone can view general assets
+      allow read: if true;
+      
+      // Only admins can modify
+      allow write: if isAdmin() && isValidImageSize();
+    }
+    
+    // ========================================
+    // TEMPORARY UPLOADS (For processing)
+    // ========================================
+    match /temp/{userId}/{fileName} {
+      // Users can manage their own temp files
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Auto-cleanup should be handled by Cloud Functions
+    }
+    
+    // ========================================
+    // CATCH-ALL: Deny everything else
+    // ========================================
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

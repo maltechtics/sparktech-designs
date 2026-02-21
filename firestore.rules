@@ -1,0 +1,272 @@
+rules_version = '2';
+
+// ============================================================
+// SPARKTECH DESIGNS - FIRESTORE SECURITY RULES
+// Building & Construction Company Website
+// ============================================================
+// 
+// IMPORTANT: Deploy these rules to Firebase Console before
+// activating Firestore in production.
+//
+// To deploy: firebase deploy --only firestore:rules
+// ============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ========================================
+    // HELPER FUNCTIONS
+    // ========================================
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if user owns this document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Check if user has admin role
+    // CRITICAL: Roles are stored in separate collection for security
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/user_roles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/user_roles/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Check if user has specific role
+    function hasRole(role) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/user_roles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/user_roles/$(request.auth.uid)).data.role == role;
+    }
+    
+    // Validate timestamp is server timestamp
+    function isValidTimestamp(field) {
+      return request.resource.data[field] == request.time;
+    }
+    
+    // ========================================
+    // USER PROFILES
+    // ========================================
+    match /users/{userId} {
+      // Users can read their own profile
+      // Admins can read all profiles
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Users can create their own profile on signup
+      // Must include required fields
+      allow create: if isOwner(userId) &&
+        request.resource.data.keys().hasAll(['email', 'createdAt']) &&
+        request.resource.data.email is string;
+      
+      // Users can update their own profile
+      // Cannot change email or createdAt
+      allow update: if isOwner(userId) &&
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['email', 'createdAt']));
+      
+      // Only admins can delete profiles
+      allow delete: if isAdmin();
+    }
+    
+    // ========================================
+    // USER ROLES (Critical Security)
+    // ========================================
+    // NEVER allow users to modify their own roles
+    match /user_roles/{userId} {
+      // Only admins can read roles
+      // Users can read their own role
+      allow read: if isAdmin() || isOwner(userId);
+      
+      // Only admins can create/update/delete roles
+      allow create, update, delete: if isAdmin();
+    }
+    
+    // ========================================
+    // PROJECTS (Public Read)
+    // ========================================
+    match /projects/{projectId} {
+      // Anyone can read projects (public content)
+      allow read: if true;
+      
+      // Only admins can create/update/delete
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasAll(['title', 'slug', 'type', 'status', 'createdAt']);
+      
+      allow update: if isAdmin();
+      
+      allow delete: if isAdmin();
+    }
+    
+    // ========================================
+    // PROPERTIES (Public Read)
+    // ========================================
+    match /properties/{propertyId} {
+      // Anyone can read properties
+      allow read: if true;
+      
+      // Only admins can write
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasAll(['title', 'price', 'status', 'type', 'createdAt']);
+      
+      allow update: if isAdmin();
+      
+      allow delete: if isAdmin();
+    }
+    
+    // ========================================
+    // SERVICES (Public Read)
+    // ========================================
+    match /services/{serviceId} {
+      // Anyone can read services
+      allow read: if true;
+      
+      // Only admins can write
+      allow write: if isAdmin();
+    }
+    
+    // ========================================
+    // BLOG POSTS
+    // ========================================
+    match /blogPosts/{postId} {
+      // Anyone can read published posts
+      // Admins can read all posts (including drafts)
+      allow read: if resource.data.published == true || isAdmin();
+      
+      // Only admins can create posts
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasAll(['title', 'slug', 'content', 'createdAt']);
+      
+      // Only admins can update/delete
+      allow update, delete: if isAdmin();
+    }
+    
+    // ========================================
+    // INQUIRIES (Contact Form)
+    // ========================================
+    match /inquiries/{inquiryId} {
+      // Users can read their own inquiries
+      // Admins can read all
+      allow read: if (resource.data.userId != null && isOwner(resource.data.userId)) || isAdmin();
+      
+      // Anyone can create an inquiry (contact form)
+      // Required fields validation
+      allow create: if 
+        request.resource.data.keys().hasAll(['name', 'email', 'message', 'type', 'status', 'createdAt']) &&
+        request.resource.data.status == 'new' &&
+        request.resource.data.name is string &&
+        request.resource.data.email is string &&
+        request.resource.data.message is string;
+      
+      // Only admins can update (change status, add reply)
+      allow update: if isAdmin();
+      
+      // Only admins can delete
+      allow delete: if isAdmin();
+    }
+    
+    // ========================================
+    // JOB APPLICATIONS
+    // ========================================
+    match /jobApplications/{appId} {
+      // Admins can read all applications
+      allow read: if isAdmin();
+      
+      // Anyone can create an application
+      allow create: if 
+        request.resource.data.keys().hasAll(['name', 'email', 'positionId', 'positionTitle', 'status', 'createdAt']) &&
+        request.resource.data.status == 'pending';
+      
+      // Only admins can update/delete
+      allow update, delete: if isAdmin();
+    }
+    
+    // ========================================
+    // NOTIFICATIONS
+    // ========================================
+    match /notifications/{notifId} {
+      // Users can only read their own notifications
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Users can update (mark as read) their own notifications
+      allow update: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      
+      // Only system/admin can create notifications
+      allow create: if isAdmin();
+      
+      // Users can delete their own, admins can delete any
+      allow delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
+    }
+    
+    // ========================================
+    // SAVED ITEMS (Favorites/Bookmarks)
+    // ========================================
+    match /savedItems/{itemId} {
+      // Users can only read their own saved items
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Users can create saved items for themselves
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.keys().hasAll(['userId', 'itemId', 'itemType', 'savedAt']);
+      
+      // Users can delete their own saved items
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // No updates allowed (delete and recreate instead)
+      allow update: if false;
+    }
+    
+    // ========================================
+    // CITIES (Public Read)
+    // ========================================
+    match /cities/{cityId} {
+      // Anyone can read cities
+      allow read: if true;
+      
+      // Only admins can write
+      allow write: if isAdmin();
+    }
+    
+    // ========================================
+    // TESTIMONIALS (Public Read)
+    // ========================================
+    match /testimonials/{testimonialId} {
+      // Anyone can read testimonials
+      allow read: if true;
+      
+      // Only admins can write
+      allow write: if isAdmin();
+    }
+    
+    // ========================================
+    // SITE SETTINGS (Admin Only)
+    // ========================================
+    match /settings/{settingId} {
+      // Anyone can read public settings
+      allow read: if resource.data.public == true || isAdmin();
+      
+      // Only admins can write
+      allow write: if isAdmin();
+    }
+    
+    // ========================================
+    // ANALYTICS (Admin Only)
+    // ========================================
+    match /analytics/{docId} {
+      // Only admins can access analytics
+      allow read, write: if isAdmin();
+    }
+    
+    // ========================================
+    // CATCH-ALL: Deny everything else
+    // ========================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
