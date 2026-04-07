@@ -34,16 +34,24 @@ import site15 from "@/assets/construction/site-15.jpg";
 import site16 from "@/assets/construction/site-16.jpg";
 import site17 from "@/assets/construction/site-17.jpg";
 import site18 from "@/assets/construction/site-18.jpg";
+import site19 from "@/assets/construction/site-19.jpg";
+import site20 from "@/assets/construction/site-20.jpg";
+import site21 from "@/assets/construction/site-21.jpg";
+import site22 from "@/assets/construction/site-22.jpg";
+import site23 from "@/assets/construction/site-23.jpg";
+import site24 from "@/assets/construction/site-24.jpg";
+import site25 from "@/assets/construction/site-25.jpg";
+import site26 from "@/assets/construction/site-26.jpg";
+import site27 from "@/assets/construction/site-27.jpg";
 
 /* 🔹 Construction Images */
 const allImages = [
   "https://i.supaimg.com/cf98dd2d-1084-4ce1-897e-bd806b9053a9/3504af64-8ebe-4246-ba0f-b623c74ba3ae.jpg",
   "https://i.supaimg.com/cf98dd2d-1084-4ce1-897e-bd806b9053a9/efb73138-4fcd-47bd-bb47-9a4161c80b0d.jpg",
   "https://i.supaimg.com/cf98dd2d-1084-4ce1-897e-bd806b9053a9/54726e72-d36c-48d5-b68a-e3d963b568d7.jpg",
-  "https://i.supaimg.com/cf98dd2d-1084-4ce1-897e-bd806b9053a9/1b6d89cb-eef7-4e28-945d-feb7121c4b4a.jpg",
-  "https://i.supaimg.com/cf98dd2d-1084-4ce1-897e-bd806b9053a9/aa45c5dd-1351-47ce-8f76-a8ba804c8bc8.jpg",
   site01, site02, site03, site04, site05, site06, site07, site08, site09,
   site10, site11, site12, site13, site14, site15, site16, site17, site18,
+  site19, site20, site21, site22, site23, site24, site25, site26, site27,
 ];
 
 const Construction = () => {
