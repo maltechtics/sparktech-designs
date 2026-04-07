@@ -16,7 +16,17 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
-/* 🔹 Construction Images (External Links) */
+import site01 from "@/assets/construction/site-01.jpg";
+import site02 from "@/assets/construction/site-02.jpg";
+import site03 from "@/assets/construction/site-03.jpg";
+import site04 from "@/assets/construction/site-04.jpg";
+import site05 from "@/assets/construction/site-05.jpg";
+import site06 from "@/assets/construction/site-06.jpg";
+import site07 from "@/assets/construction/site-07.jpg";
+import site08 from "@/assets/construction/site-08.jpg";
+import site09 from "@/assets/construction/site-09.jpg";
+
+/* 🔹 Construction Images */
 const allImages = [
   "https://i.supaimg.com/cf98dd2d-1084-4ce1-897e-bd806b9053a9/3504af64-8ebe-4246-ba0f-b623c74ba3ae.jpg",
   "https://i.supaimg.com/cf98dd2d-1084-4ce1-897e-bd806b9053a9/efb73138-4fcd-47bd-bb47-9a4161c80b0d.jpg",
@@ -27,6 +37,15 @@ const allImages = [
   "https://i.supaimg.com/cf98dd2d-1084-4ce1-897e-bd806b9053a9/4d7f8246-0f03-430c-858f-0d3c4385ebd3.jpg",
   "https://i.supaimg.com/cf98dd2d-1084-4ce1-897e-bd806b9053a9/1b6d89cb-eef7-4e28-945d-feb7121c4b4a.jpg",
   "https://i.supaimg.com/cf98dd2d-1084-4ce1-897e-bd806b9053a9/aa45c5dd-1351-47ce-8f76-a8ba804c8bc8.jpg",
+  site01,
+  site02,
+  site03,
+  site04,
+  site05,
+  site06,
+  site07,
+  site08,
+  site09,
 ];
 
 const Construction = () => {
