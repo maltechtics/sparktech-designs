@@ -43,6 +43,16 @@ import site24 from "@/assets/construction/site-24.jpg";
 import site25 from "@/assets/construction/site-25.jpg";
 import site26 from "@/assets/construction/site-26.jpg";
 import site27 from "@/assets/construction/site-27.jpg";
+import site28 from "@/assets/construction/site-28.jpg";
+import site29 from "@/assets/construction/site-29.jpg";
+import site30 from "@/assets/construction/site-30.jpg";
+import site31 from "@/assets/construction/site-31.jpg";
+import site32 from "@/assets/construction/site-32.jpg";
+import site33 from "@/assets/construction/site-33.jpg";
+import site34 from "@/assets/construction/site-34.jpg";
+import site35 from "@/assets/construction/site-35.jpg";
+import site36 from "@/assets/construction/site-36.jpg";
+import site37 from "@/assets/construction/site-37.jpg";
 
 /* 🔹 Construction Images */
 const allImages = [
@@ -52,6 +62,7 @@ const allImages = [
   site01, site02, site03, site04, site05, site06, site07, site08, site09,
   site10, site11, site12, site13, site14, site15, site16, site17, site18,
   site19, site20, site21, site22, site23, site24, site25, site26, site27,
+  site28, site29, site30, site31, site32, site33, site34, site35, site36, site37,
 ];
 
 const Construction = () => {
